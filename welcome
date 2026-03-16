@@ -2,6 +2,22 @@ import java.util.Scanner;
 
 public class PalindromeChecker {
 
+    // UC4: Two-pointer approach using char array
+    public static boolean isPalindromeCharArray(String input) {
+        char[] chars = input.toCharArray();
+        int start = 0;
+        int end = chars.length - 1;
+
+        while (start < end) {
+            if (chars[start] != chars[end]) {
+                return false;
+            }
+            start++;
+            end--;
+        }
+        return true;
+    }
+
     // UC3: Reverse using for loop + string concatenation
     public static String reverseString(String input) {
         String reversed = "";
@@ -42,6 +58,34 @@ public class PalindromeChecker {
             System.out.println(testWord + " is a palindrome.");
         } else {
             System.out.println(testWord + " is not a palindrome.");
+        }
+
+        // UC4: Two-pointer approach using char array
+        System.out.println("\n--- UC4: Two-Pointer Char Array ---");
+        String charTestWord = "level";
+        char[] chars = charTestWord.toCharArray();
+
+        System.out.println("Original : " + charTestWord);
+        System.out.print("Char[]   : [");
+        for (int i = 0; i < chars.length; i++) {
+            System.out.print(chars[i]);
+            if (i < chars.length - 1) System.out.print(", ");
+        }
+        System.out.println("]");
+
+        int start = 0;
+        int end = chars.length - 1;
+        System.out.println("Comparing pointers:");
+        while (start < end) {
+            System.out.println("  chars[" + start + "] = '" + chars[start] + "'  vs  chars[" + end + "] = '" + chars[end] + "'");
+            start++;
+            end--;
+        }
+
+        if (isPalindromeCharArray(charTestWord)) {
+            System.out.println(charTestWord + " is a palindrome.");
+        } else {
+            System.out.println(charTestWord + " is not a palindrome.");
         }
 
         // UC1: Interactive checker
