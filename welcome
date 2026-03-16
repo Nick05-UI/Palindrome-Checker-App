@@ -2,19 +2,35 @@ import java.util.Scanner;
 import java.util.Stack;
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.Deque;
+import java.util.ArrayDeque;
 
 public class PalindromeChecker {
+
+    // UC7: Deque-based palindrome check
+    public static boolean isPalindromeDeque(String input) {
+        Deque<Character> deque = new ArrayDeque<>();
+
+        for (int i = 0; i < input.length(); i++) {
+            deque.addLast(input.charAt(i));
+        }
+
+        while (deque.size() > 1) {
+            if (deque.removeFirst() != deque.removeLast()) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     // UC6: Queue vs Stack (FIFO vs LIFO) palindrome check
     public static boolean isPalindromeQueueStack(String input) {
         Stack<Character> stack = new Stack<>();
         Queue<Character> queue = new LinkedList<>();
-
         for (int i = 0; i < input.length(); i++) {
             stack.push(input.charAt(i));
             queue.add(input.charAt(i));
         }
-
         while (!stack.isEmpty()) {
             if (stack.pop() != queue.poll()) {
                 return false;
@@ -143,16 +159,13 @@ public class PalindromeChecker {
         String uc6Word = "civic";
         Stack<Character> uc6Stack = new Stack<>();
         Queue<Character> uc6Queue = new LinkedList<>();
-
         System.out.println("Original : " + uc6Word);
-
         for (int i = 0; i < uc6Word.length(); i++) {
             uc6Stack.push(uc6Word.charAt(i));
             uc6Queue.add(uc6Word.charAt(i));
         }
-        System.out.println("Stack (LIFO) after push : " + uc6Stack);
+        System.out.println("Stack (LIFO) after push    : " + uc6Stack);
         System.out.println("Queue (FIFO) after enqueue : " + uc6Queue);
-
         System.out.println("\nComparing pop (LIFO) vs dequeue (FIFO):");
         Stack<Character> tempStack = new Stack<>();
         Queue<Character> tempQueue = new LinkedList<>();
@@ -167,8 +180,35 @@ public class PalindromeChecker {
             System.out.println("  Stack.pop() = '" + fromStack + "'  Queue.poll() = '" + fromQueue + "'  Match: " + (fromStack == fromQueue));
             if (fromStack != fromQueue) match = false;
         }
-
         System.out.println("\nResult : " + (match ? uc6Word + " is a palindrome." : uc6Word + " is not a palindrome."));
+
+        // UC7: Deque-based palindrome check
+        System.out.println("\n--- UC7: Deque Front & Rear Comparison ---");
+        String dequeWord = "rotator";
+        Deque<Character> deque = new ArrayDeque<>();
+        System.out.println("Original : " + dequeWord);
+        for (int i = 0; i < dequeWord.length(); i++) {
+            deque.addLast(dequeWord.charAt(i));
+        }
+        System.out.println("Deque after insert : " + deque);
+        System.out.println("\nComparing front and rear:");
+        Deque<Character> tempDeque = new ArrayDeque<>();
+        for (int i = 0; i < dequeWord.length(); i++) {
+            tempDeque.addLast(dequeWord.charAt(i));
+        }
+        boolean dequeMatch = true;
+        int step = 1;
+        while (tempDeque.size() > 1) {
+            char front = tempDeque.removeFirst();
+            char rear  = tempDeque.removeLast();
+            System.out.println("  Step " + step + " : front = '" + front + "'  rear = '" + rear + "'  Match: " + (front == rear));
+            if (front != rear) dequeMatch = false;
+            step++;
+        }
+        if (tempDeque.size() == 1) {
+            System.out.println("  Center : '" + tempDeque.peekFirst() + "' (middle character, skipped)");
+        }
+        System.out.println("\nResult : " + (dequeMatch ? dequeWord + " is a palindrome." : dequeWord + " is not a palindrome."));
 
         // UC1: Interactive checker
         System.out.println("\n================================");
