@@ -1,0 +1,47 @@
+import java.util.Scanner;
+
+public class PalindromeChecker {
+
+    public static boolean isPalindrome(String input) {
+        String cleaned = input.toLowerCase().replaceAll("[^a-z0-9]", "");
+        String reversed = new StringBuilder(cleaned).reverse().toString();
+        return cleaned.equals(reversed);
+    }
+
+    public static void main(String[] args) {
+        System.out.println("================================");
+        System.out.println("     PALINDROME CHECKER v1.0    ");
+        System.out.println("================================");
+        System.out.println("Checks if a word or phrase reads");
+        System.out.println("the same forwards and backwards.");
+        System.out.println("Type 'exit' to quit.");
+        System.out.println("--------------------------------");
+
+        Scanner scanner = new Scanner(System.in);
+        int total = 0, palindromes = 0;
+
+        while (true) {
+            System.out.print("\nEnter a word or phrase: ");
+            String input = scanner.nextLine();
+
+            if (input.equalsIgnoreCase("exit")) break;
+
+            total++;
+            if (isPalindrome(input)) {
+                palindromes++;
+                System.out.println("✓ \"" + input + "\" IS a palindrome!");
+            } else {
+                System.out.println("✗ \"" + input + "\" is NOT a palindrome.");
+            }
+
+            System.out.println("  Stats: " + palindromes + "/" + total + " palindromes found");
+        }
+
+        System.out.println("\n--- Session Summary ---");
+        System.out.println("Total checked  : " + total);
+        System.out.println("Palindromes    : " + palindromes);
+        System.out.println("Not palindromes: " + (total - palindromes));
+        System.out.println("Thanks for using Palindrome Checker!");
+        scanner.close();
+    }
+}
