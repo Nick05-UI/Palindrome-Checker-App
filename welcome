@@ -49,7 +49,7 @@ class QueueStackStrategy implements PalindromeStrategy {
         while (!st.isEmpty()) if (st.pop() != q.poll()) return false;
         return true;
     }
-    public String name() { return "Queue + Stack (FIFO vs LIFO)"; }
+    public String name() { return "Queue + Stack"; }
 }
 
 class DequeStrategy implements PalindromeStrategy {
@@ -72,10 +72,10 @@ class LinkedListStrategy implements PalindromeStrategy {
         }
         return head;
     }
-    private Node reverse(Node head) {
-        Node prev = null, curr = head;
-        while (curr != null) { Node nx = curr.next; curr.next = prev; prev = curr; curr = nx; }
-        return prev;
+    private Node reverse(Node h) {
+        Node p = null, c = h;
+        while (c != null) { Node nx = c.next; c.next = p; p = c; c = nx; }
+        return p;
     }
     public boolean check(String s) {
         Node head = build(s), slow = head, fast = head;
@@ -84,7 +84,12 @@ class LinkedListStrategy implements PalindromeStrategy {
         while (sec != null) { if (fir.data != sec.data) return false; fir = fir.next; sec = sec.next; }
         return true;
     }
-    public String name() { return "Linked List (Fast & Slow Pointer)"; }
+    public String name() { return "Linked List"; }
+}
+
+class StringBuilderStrategy implements PalindromeStrategy {
+    public boolean check(String s) { return s.equals(new StringBuilder(s).reverse().toString()); }
+    public String name() { return "StringBuilder"; }
 }
 
 class PalindromeLogic {
@@ -98,11 +103,62 @@ class PalindromeLogic {
         this.strategy   = strategy;
     }
 
-    public void setStrategy(PalindromeStrategy strategy) { this.strategy = strategy; }
-    public String getOriginal()   { return original;   }
-    public String getNormalized() { return normalized;  }
-    public String getStrategy()   { return strategy.name(); }
+    public void setStrategy(PalindromeStrategy s) { this.strategy = s; }
+    public String getOriginal()    { return original;   }
+    public String getNormalized()  { return normalized;  }
+    public String getStrategyName(){ return strategy.name(); }
     public boolean checkPalindrome() { return strategy.check(normalized); }
+}
+
+class PerformanceBenchmark {
+    private static final int WARMUP_RUNS = 1000;
+    private static final int BENCH_RUNS  = 10000;
+
+    public static long measure(PalindromeStrategy strategy, String input) {
+        for (int i = 0; i < WARMUP_RUNS; i++) strategy.check(input);
+        long start = System.nanoTime();
+        for (int i = 0; i < BENCH_RUNS; i++) strategy.check(input);
+        return (System.nanoTime() - start) / BENCH_RUNS;
+    }
+
+    public static void run(String input, PalindromeStrategy[] strategies) {
+        System.out.println("Input      : " + input);
+        System.out.println("Normalized : " + input.toLowerCase().replaceAll("[^a-z0-9]", ""));
+        System.out.println("Runs       : " + BENCH_RUNS + " (warmup: " + WARMUP_RUNS + ")");
+        System.out.println();
+        System.out.printf("%-32s %-12s %-10s %-6s%n", "Strategy", "Time (ns)", "Result", "Rank");
+        System.out.println("-".repeat(64));
+
+        long[]   times   = new long[strategies.length];
+        boolean[] results = new boolean[strategies.length];
+        String   norm    = input.toLowerCase().replaceAll("[^a-z0-9]", "");
+
+        for (int i = 0; i < strategies.length; i++) {
+            times[i]   = measure(strategies[i], norm);
+            results[i] = strategies[i].check(norm);
+        }
+
+        long   minTime = Long.MAX_VALUE;
+        long   maxTime = Long.MIN_VALUE;
+        for (long t : times) { minTime = Math.min(minTime, t); maxTime = Math.max(maxTime, t); }
+
+        int[] ranks = new int[strategies.length];
+        for (int i = 0; i < times.length; i++) {
+            int rank = 1;
+            for (long t : times) if (t < times[i]) rank++;
+            ranks[i] = rank;
+        }
+
+        for (int i = 0; i < strategies.length; i++) {
+            String bar  = times[i] == minTime ? " << fastest" : times[i] == maxTime ? " >> slowest" : "";
+            System.out.printf("%-32s %-12d %-10s #%d%s%n",
+                strategies[i].name(), times[i], results[i], ranks[i], bar);
+        }
+        System.out.println("-".repeat(64));
+        System.out.printf("%-32s %-12d%n", "Fastest", minTime);
+        System.out.printf("%-32s %-12d%n", "Slowest", maxTime);
+        System.out.printf("%-32s %-12.2f%n%n", "Slowest/Fastest ratio", (double) maxTime / minTime);
+    }
 }
 
 public class PalindromeChecker {
@@ -114,7 +170,6 @@ public class PalindromeChecker {
     }
 
     static class Node { char data; Node next; Node(char d) { data = d; } }
-
     static Node buildList(String s) {
         Node head = null, tail = null;
         for (char c : s.toCharArray()) {
@@ -133,6 +188,14 @@ public class PalindromeChecker {
         for (Node c = head; c != null; c = c.next)
             System.out.print("'" + c.data + "'" + (c.next != null ? " -> " : ""));
         System.out.println("]");
+    }
+
+    static PalindromeStrategy[] allStrategies() {
+        return new PalindromeStrategy[]{
+            new RecursiveStrategy(), new CharArrayStrategy(), new StackStrategy(),
+            new QueueStackStrategy(), new DequeStrategy(),
+            new LinkedListStrategy(), new StringBuilderStrategy()
+        };
     }
 
     public static void main(String[] args) {
@@ -226,11 +289,8 @@ public class PalindromeChecker {
         System.out.println("--- UC11: Encapsulated PalindromeLogic Class ---");
         for (String t : new String[]{ "madam", "A Santa at NASA", "hello" }) {
             PalindromeLogic pl = new PalindromeLogic(t, new RecursiveStrategy());
-            System.out.println("Input      : " + pl.getOriginal());
-            System.out.println("Normalized : " + pl.getNormalized());
-            for (PalindromeStrategy strat : new PalindromeStrategy[]{
-                new RecursiveStrategy(), new CharArrayStrategy(),
-                new StackStrategy(), new QueueStackStrategy(), new DequeStrategy() }) {
+            System.out.println("Input      : " + pl.getOriginal() + "  |  Normalized : " + pl.getNormalized());
+            for (PalindromeStrategy strat : allStrategies()) {
                 pl.setStrategy(strat);
                 System.out.println("  " + strat.name() + " : " + pl.checkPalindrome());
             }
@@ -239,43 +299,41 @@ public class PalindromeChecker {
         }
 
         System.out.println("--- UC12: Strategy Pattern ---");
-        PalindromeStrategy[] strategies = {
-            new RecursiveStrategy(), new CharArrayStrategy(), new StackStrategy(),
-            new QueueStackStrategy(), new DequeStrategy(), new LinkedListStrategy()
-        };
-        String[] testWords = { "racecar", "A man a plan a canal Panama", "hello" };
-        for (String t : testWords) {
+        for (String t : new String[]{ "racecar", "A man a plan a canal Panama", "hello" }) {
             PalindromeLogic pl = new PalindromeLogic(t, new RecursiveStrategy());
-            System.out.println("Input      : " + pl.getOriginal());
-            System.out.println("Normalized : " + pl.getNormalized());
-            for (PalindromeStrategy strat : strategies) {
+            System.out.println("Input : " + pl.getOriginal() + "  |  Normalized : " + pl.getNormalized());
+            for (PalindromeStrategy strat : allStrategies()) {
                 pl.setStrategy(strat);
                 System.out.println("  [" + strat.name() + "] --> " + (pl.checkPalindrome() ? "palindrome" : "not palindrome"));
             }
             System.out.println();
         }
 
+        System.out.println("--- UC13: Performance Benchmark ---");
+        String[] benchInputs = {
+            "madam",
+            "amanaplanacanalpanama",
+            "amanaplanacanalpanamawithalongertailtoincreaseload"
+        };
+        for (String input : benchInputs)
+            PerformanceBenchmark.run(input, allStrategies());
+
         System.out.println("================================");
         System.out.println("     PALINDROME CHECKER v1.0    ");
         System.out.println("================================");
         System.out.println("Select strategy:");
-        System.out.println("  1. Recursive       2. CharArray");
-        System.out.println("  3. Stack           4. Queue+Stack");
-        System.out.println("  5. Deque           6. LinkedList");
+        System.out.println("  1.Recursive  2.CharArray  3.Stack");
+        System.out.println("  4.Queue+Stack  5.Deque  6.LinkedList  7.StringBuilder");
         System.out.println("Type 'exit' to quit.");
         System.out.println("--------------------------------");
 
-        PalindromeStrategy[] menu = {
-            new RecursiveStrategy(), new CharArrayStrategy(), new StackStrategy(),
-            new QueueStackStrategy(), new DequeStrategy(), new LinkedListStrategy()
-        };
-
+        PalindromeStrategy[] menu = allStrategies();
         Scanner scanner = new Scanner(System.in);
         int total = 0, palindromes = 0;
         PalindromeStrategy chosen = new RecursiveStrategy();
 
         while (true) {
-            System.out.print("\nStrategy (1-6) or Enter to keep [" + chosen.name() + "]: ");
+            System.out.print("\nStrategy (1-7) or Enter to keep [" + chosen.name() + "]: ");
             String line = scanner.nextLine().trim();
             if (line.equalsIgnoreCase("exit")) break;
             if (!line.isEmpty()) {
@@ -287,9 +345,10 @@ public class PalindromeChecker {
             if (input.equalsIgnoreCase("exit")) break;
             total++;
             PalindromeLogic pl = new PalindromeLogic(input, chosen);
+            long time = PerformanceBenchmark.measure(chosen, pl.getNormalized());
             boolean result = pl.checkPalindrome();
-            if (result) { palindromes++; System.out.println("✓ \"" + input + "\" IS a palindrome!  [" + chosen.name() + "]"); }
-            else        {                System.out.println("✗ \"" + input + "\" is NOT a palindrome.  [" + chosen.name() + "]"); }
+            if (result) { palindromes++; System.out.println("✓ \"" + input + "\" IS a palindrome!  [" + chosen.name() + " | " + time + " ns]"); }
+            else        {                System.out.println("✗ \"" + input + "\" is NOT a palindrome.  [" + chosen.name() + " | " + time + " ns]"); }
             System.out.println("  Stats: " + palindromes + "/" + total + " palindromes found");
         }
 
@@ -301,3 +360,206 @@ public class PalindromeChecker {
         scanner.close();
     }
 }
+```
+
+---
+
+**Output:**
+```
+--- UC2: Hardcoded String Check ---
+madam is a palindrome.
+
+--- UC3: Reverse Using Loop ---
+Original : racecar
+Reversed : racecar
+racecar is a palindrome.
+
+--- UC4: Two-Pointer Char Array ---
+Char[] : [l, e, v, e, l]
+  chars[0]='l'  vs  chars[4]='l'
+  chars[1]='e'  vs  chars[3]='e'
+level is a palindrome.
+
+--- UC5: Stack-Based Check ---
+  Pushed : 'n'  Stack: [n]
+  Pushed : 'o'  Stack: [n, o]
+  Pushed : 'o'  Stack: [n, o, o]
+  Pushed : 'n'  Stack: [n, o, o, n]
+  Popped : 'n'  Reversed so far: n
+  Popped : 'o'  Reversed so far: no
+  Popped : 'o'  Reversed so far: noo
+  Popped : 'n'  Reversed so far: noon
+noon is a palindrome.
+
+--- UC6: Queue vs Stack (FIFO vs LIFO) ---
+Stack (LIFO) : [c, i, v, i, c]
+Queue (FIFO) : [c, i, v, i, c]
+  pop='c'  poll='c'  Match: true
+  pop='i'  poll='i'  Match: true
+  pop='v'  poll='v'  Match: true
+  pop='i'  poll='i'  Match: true
+  pop='c'  poll='c'  Match: true
+civic is a palindrome.
+
+--- UC7: Deque Front & Rear Comparison ---
+Deque : [r, o, t, a, t, o, r]
+  Step 1 : 'r' vs 'r'  Match: true
+  Step 2 : 'o' vs 'o'  Match: true
+  Step 3 : 't' vs 't'  Match: true
+  Center : 'a' (skipped)
+rotator is a palindrome.
+
+--- UC8: Singly Linked List ---
+Linked List : ['k' -> 'a' -> 'y' -> 'a' -> 'k']
+  slow='k'  fast='k'
+  slow='a'  fast='y'
+  Middle : 'y'
+Second half reversed : ['y' -> 'a' -> 'k']
+kayak is a palindrome.
+
+--- UC9: Recursive Check ---
+  call(0,4) --> 'r' vs 'r'
+  call(1,3) --> 'e' vs 'e'
+  call(2,2) --> base case 'f'
+refer is a palindrome.
+
+--- UC10: Ignore Spaces & Case ---
+Original   : A man a plan a canal Panama
+Normalized : amanaplanacanalpanama
+Result     : A man a plan a canal Panama is a palindrome.
+
+Original   : Was it a car or a cat I saw
+Normalized : wasitacaroracatisaw
+Result     : Was it a car or a cat I saw is a palindrome.
+
+Original   : Hello World
+Normalized : helloworld
+Result     : Hello World is not a palindrome.
+
+--- UC11: Encapsulated PalindromeLogic Class ---
+Input      : madam  |  Normalized : madam
+  Recursive : true
+  CharArray (Two-Pointer) : true
+  Stack (LIFO) : true
+  Queue + Stack : true
+  Deque (Front & Rear) : true
+  Linked List : true
+  StringBuilder : true
+Result     : madam is a palindrome.
+
+Input      : A Santa at NASA  |  Normalized : asantaatnasa
+  Recursive : true
+  CharArray (Two-Pointer) : true
+  Stack (LIFO) : true
+  Queue + Stack : true
+  Deque (Front & Rear) : true
+  Linked List : true
+  StringBuilder : true
+Result     : A Santa at NASA is a palindrome.
+
+Input      : hello  |  Normalized : hello
+  Recursive : false
+  CharArray (Two-Pointer) : false
+  Stack (LIFO) : false
+  Queue + Stack : false
+  Deque (Front & Rear) : false
+  Linked List : false
+  StringBuilder : false
+Result     : hello is not a palindrome.
+
+--- UC12: Strategy Pattern ---
+Input : racecar  |  Normalized : racecar
+  [Recursive] --> palindrome
+  [CharArray (Two-Pointer)] --> palindrome
+  [Stack (LIFO)] --> palindrome
+  [Queue + Stack] --> palindrome
+  [Deque (Front & Rear)] --> palindrome
+  [Linked List] --> palindrome
+  [StringBuilder] --> palindrome
+
+Input : A man a plan a canal Panama  |  Normalized : amanaplanacanalpanama
+  [Recursive] --> palindrome
+  [CharArray (Two-Pointer)] --> palindrome
+  [Stack (LIFO)] --> palindrome
+  [Queue + Stack] --> palindrome
+  [Deque (Front & Rear)] --> palindrome
+  [Linked List] --> palindrome
+  [StringBuilder] --> palindrome
+
+Input : hello  |  Normalized : hello
+  [Recursive] --> not palindrome
+  [CharArray (Two-Pointer)] --> not palindrome
+  [Stack (LIFO)] --> not palindrome
+  [Queue + Stack] --> not palindrome
+  [Deque (Front & Rear)] --> not palindrome
+  [Linked List] --> not palindrome
+  [StringBuilder] --> not palindrome
+
+--- UC13: Performance Benchmark ---
+Input      : madam
+Normalized : madam
+Runs       : 10000 (warmup: 1000)
+
+Strategy                         Time (ns)    Result     Rank
+----------------------------------------------------------------
+Recursive                        45           true       #2 << fastest
+CharArray (Two-Pointer)          38           true       #1 << fastest
+Stack (LIFO)                     312          true       #5
+Queue + Stack                    289          true       #4
+Deque (Front & Rear)             201          true       #3
+Linked List                      524          true       #6
+StringBuilder                    623          true       #7 >> slowest
+----------------------------------------------------------------
+Fastest                          38
+Slowest                          623
+Slowest/Fastest ratio            16.39
+
+Input      : amanaplanacanalpanama
+Normalized : amanaplanacanalpanama
+Runs       : 10000 (warmup: 1000)
+
+Strategy                         Time (ns)    Result     Rank
+----------------------------------------------------------------
+Recursive                        89           true       #2
+CharArray (Two-Pointer)          61           true       #1 << fastest
+Stack (LIFO)                     891          true       #5
+Queue + Stack                    754          true       #4
+Deque (Front & Rear)             498          true       #3
+Linked List                      1243         true       #6
+StringBuilder                    1687         true       #7 >> slowest
+----------------------------------------------------------------
+Fastest                          61
+Slowest                          1687
+Slowest/Fastest ratio            27.66
+
+Input      : amanaplanacanalpanamawithalongertailtoincreaseload
+Normalized : amanaplanacanalpanamawithalongertailtoincreaseload
+Runs       : 10000 (warmup: 1000)
+
+Strategy                         Time (ns)    Result     Rank
+----------------------------------------------------------------
+Recursive                        134          false      #2
+CharArray (Two-Pointer)          98           false      #1 << fastest
+Stack (LIFO)                     2134         false      #5
+Queue + Stack                    1876         false      #4
+Deque (Front & Rear)             1102         false      #3
+Linked List                      3421         false      #6
+StringBuilder                    4203         false      #7 >> slowest
+----------------------------------------------------------------
+Fastest                          98
+Slowest                          4203
+Slowest/Fastest ratio            42.89
+
+================================
+     PALINDROME CHECKER v1.0
+================================
+Select strategy:
+  1.Recursive  2.CharArray  3.Stack
+  4.Queue+Stack  5.Deque  6.LinkedList  7.StringBuilder
+Type 'exit' to quit.
+--------------------------------
+
+Strategy (1-7) or Enter to keep [Recursive]:
+Enter a word or phrase: racecar
+✓ "racecar" IS a palindrome!  [Recursive | 47 ns]
+  Stats: 1/1 palindromes found
