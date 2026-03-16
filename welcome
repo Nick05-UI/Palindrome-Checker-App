@@ -1,6 +1,25 @@
 import java.util.Scanner;
+import java.util.Stack;
 
 public class PalindromeChecker {
+
+    // UC5: Stack-based palindrome check
+    public static boolean isPalindromeStack(String input) {
+        Stack<Character> stack = new Stack<>();
+
+        // Push all characters onto the stack
+        for (int i = 0; i < input.length(); i++) {
+            stack.push(input.charAt(i));
+        }
+
+        // Pop characters and compare with original
+        String reversed = "";
+        while (!stack.isEmpty()) {
+            reversed = reversed + stack.pop();
+        }
+
+        return input.equals(reversed);
+    }
 
     // UC4: Two-pointer approach using char array
     public static boolean isPalindromeCharArray(String input) {
@@ -86,6 +105,35 @@ public class PalindromeChecker {
             System.out.println(charTestWord + " is a palindrome.");
         } else {
             System.out.println(charTestWord + " is not a palindrome.");
+        }
+
+        // UC5: Stack-based palindrome check
+        System.out.println("\n--- UC5: Stack-Based Check ---");
+        String stackTestWord = "noon";
+        Stack<Character> stack = new Stack<>();
+
+        System.out.println("Original : " + stackTestWord);
+
+        // Push
+        for (int i = 0; i < stackTestWord.length(); i++) {
+            stack.push(stackTestWord.charAt(i));
+            System.out.println("  Pushed : '" + stackTestWord.charAt(i) + "'  Stack: " + stack);
+        }
+
+        // Pop
+        String popped = "";
+        while (!stack.isEmpty()) {
+            char c = stack.pop();
+            popped = popped + c;
+            System.out.println("  Popped : '" + c + "'  Reversed so far: " + popped);
+        }
+
+        System.out.println("Reversed : " + popped);
+
+        if (isPalindromeStack(stackTestWord)) {
+            System.out.println(stackTestWord + " is a palindrome.");
+        } else {
+            System.out.println(stackTestWord + " is not a palindrome.");
         }
 
         // UC1: Interactive checker
