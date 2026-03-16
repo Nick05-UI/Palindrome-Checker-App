@@ -7,18 +7,92 @@ import java.util.ArrayDeque;
 
 public class PalindromeChecker {
 
+    // UC8: Singly Linked List Node
+    static class Node {
+        char data;
+        Node next;
+        Node(char data) {
+            this.data = data;
+            this.next = null;
+        }
+    }
+
+    // UC8: Build linked list from string
+    public static Node buildLinkedList(String input) {
+        Node head = null;
+        Node tail = null;
+        for (int i = 0; i < input.length(); i++) {
+            Node newNode = new Node(input.charAt(i));
+            if (head == null) {
+                head = newNode;
+                tail = newNode;
+            } else {
+                tail.next = newNode;
+                tail = newNode;
+            }
+        }
+        return head;
+    }
+
+    // UC8: Print linked list
+    public static void printLinkedList(Node head) {
+        Node curr = head;
+        System.out.print("[");
+        while (curr != null) {
+            System.out.print("'" + curr.data + "'");
+            if (curr.next != null) System.out.print(" -> ");
+            curr = curr.next;
+        }
+        System.out.println("]");
+    }
+
+    // UC8: Reverse a linked list
+    public static Node reverseList(Node head) {
+        Node prev = null;
+        Node curr = head;
+        while (curr != null) {
+            Node nextNode = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = nextNode;
+        }
+        return prev;
+    }
+
+    // UC8: Palindrome check using singly linked list
+    public static boolean isPalindromeLinkedList(String input) {
+        Node head = buildLinkedList(input);
+
+        // Step 1: Find middle using fast and slow pointers
+        Node slow = head;
+        Node fast = head;
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+
+        // Step 2: Reverse second half
+        Node secondHalf = reverseList(slow);
+
+        // Step 3: Compare both halves
+        Node first  = head;
+        Node second = secondHalf;
+        while (second != null) {
+            if (first.data != second.data) return false;
+            first  = first.next;
+            second = second.next;
+        }
+        return true;
+    }
+
     // UC7: Deque-based palindrome check
     public static boolean isPalindromeDeque(String input) {
         Deque<Character> deque = new ArrayDeque<>();
-
         for (int i = 0; i < input.length(); i++) {
             deque.addLast(input.charAt(i));
         }
-
         while (deque.size() > 1) {
-            if (deque.removeFirst() != deque.removeLast()) {
-                return false;
-            }
+            if (deque.removeFirst() != deque.removeLast()) return false;
         }
         return true;
     }
@@ -32,9 +106,7 @@ public class PalindromeChecker {
             queue.add(input.charAt(i));
         }
         while (!stack.isEmpty()) {
-            if (stack.pop() != queue.poll()) {
-                return false;
-            }
+            if (stack.pop() != queue.poll()) return false;
         }
         return true;
     }
@@ -58,9 +130,7 @@ public class PalindromeChecker {
         int start = 0;
         int end = chars.length - 1;
         while (start < end) {
-            if (chars[start] != chars[end]) {
-                return false;
-            }
+            if (chars[start] != chars[end]) return false;
             start++;
             end--;
         }
@@ -209,6 +279,65 @@ public class PalindromeChecker {
             System.out.println("  Center : '" + tempDeque.peekFirst() + "' (middle character, skipped)");
         }
         System.out.println("\nResult : " + (dequeMatch ? dequeWord + " is a palindrome." : dequeWord + " is not a palindrome."));
+
+        // UC8: Singly Linked List palindrome check
+        System.out.println("\n--- UC8: Singly Linked List ---");
+        String listWord = "kayak";
+        System.out.println("Original : " + listWord);
+
+        Node head = buildLinkedList(listWord);
+        System.out.print("Linked List        : ");
+        printLinkedList(head);
+
+        // Find middle using fast and slow pointers
+        Node slow = head;
+        Node fast = head;
+        int slowSteps = 0;
+        System.out.println("\nFinding middle (fast & slow pointer):");
+        while (fast != null && fast.next != null) {
+            System.out.println("  slow -> '" + slow.data + "'  fast -> '" + fast.data + "'");
+            slow = slow.next;
+            fast = fast.next.next;
+            slowSteps++;
+        }
+        System.out.println("  Middle node reached at : '" + slow.data + "'");
+
+        // Rebuild for reversal display
+        Node head2      = buildLinkedList(listWord);
+        Node slow2      = head2;
+        Node fast2      = head2;
+        while (fast2 != null && fast2.next != null) {
+            slow2 = slow2.next;
+            fast2 = fast2.next.next;
+        }
+        Node secondHalf = reverseList(slow2);
+        System.out.print("Second half reversed : ");
+        printLinkedList(secondHalf);
+
+        // Compare halves
+        System.out.println("\nComparing first half vs reversed second half:");
+        Node head3       = buildLinkedList(listWord);
+        Node slow3       = head3;
+        Node fast3       = head3;
+        while (fast3 != null && fast3.next != null) {
+            slow3 = slow3.next;
+            fast3 = fast3.next.next;
+        }
+        Node second = reverseList(slow3);
+        Node first  = head3;
+        int  cStep  = 1;
+        while (second != null) {
+            System.out.println("  Step " + cStep + " : first = '" + first.data + "'  second = '" + second.data + "'  Match: " + (first.data == second.data));
+            first  = first.next;
+            second = second.next;
+            cStep++;
+        }
+
+        if (isPalindromeLinkedList(listWord)) {
+            System.out.println("\n" + listWord + " is a palindrome.");
+        } else {
+            System.out.println("\n" + listWord + " is not a palindrome.");
+        }
 
         // UC1: Interactive checker
         System.out.println("\n================================");
