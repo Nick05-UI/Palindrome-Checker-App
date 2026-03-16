@@ -57,13 +57,3 @@ public class PalindromeChecker {
         scanner.close();
     }
 }
-```
-
-**Output flow:**
-```
-madam is a palindrome.
-
-================================
-     PALINDROME CHECKER v1.0    
-================================
-...
