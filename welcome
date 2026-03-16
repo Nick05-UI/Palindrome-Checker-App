@@ -1,23 +1,38 @@
 import java.util.Scanner;
 import java.util.Stack;
+import java.util.Queue;
+import java.util.LinkedList;
 
 public class PalindromeChecker {
+
+    // UC6: Queue vs Stack (FIFO vs LIFO) palindrome check
+    public static boolean isPalindromeQueueStack(String input) {
+        Stack<Character> stack = new Stack<>();
+        Queue<Character> queue = new LinkedList<>();
+
+        for (int i = 0; i < input.length(); i++) {
+            stack.push(input.charAt(i));
+            queue.add(input.charAt(i));
+        }
+
+        while (!stack.isEmpty()) {
+            if (stack.pop() != queue.poll()) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     // UC5: Stack-based palindrome check
     public static boolean isPalindromeStack(String input) {
         Stack<Character> stack = new Stack<>();
-
-        // Push all characters onto the stack
         for (int i = 0; i < input.length(); i++) {
             stack.push(input.charAt(i));
         }
-
-        // Pop characters and compare with original
         String reversed = "";
         while (!stack.isEmpty()) {
             reversed = reversed + stack.pop();
         }
-
         return input.equals(reversed);
     }
 
@@ -26,7 +41,6 @@ public class PalindromeChecker {
         char[] chars = input.toCharArray();
         int start = 0;
         int end = chars.length - 1;
-
         while (start < end) {
             if (chars[start] != chars[end]) {
                 return false;
@@ -56,9 +70,9 @@ public class PalindromeChecker {
     public static void main(String[] args) {
 
         // UC2: Hardcoded string check
+        System.out.println("--- UC2: Hardcoded String Check ---");
         String word = "madam";
         String reversedWord = new StringBuilder(word).reverse().toString();
-
         if (word.equals(reversedWord)) {
             System.out.println(word + " is a palindrome.");
         } else {
@@ -69,10 +83,8 @@ public class PalindromeChecker {
         System.out.println("\n--- UC3: Reverse Using Loop ---");
         String testWord = "racecar";
         String reversedLoop = reverseString(testWord);
-
         System.out.println("Original : " + testWord);
         System.out.println("Reversed : " + reversedLoop);
-
         if (testWord.equals(reversedLoop)) {
             System.out.println(testWord + " is a palindrome.");
         } else {
@@ -83,7 +95,6 @@ public class PalindromeChecker {
         System.out.println("\n--- UC4: Two-Pointer Char Array ---");
         String charTestWord = "level";
         char[] chars = charTestWord.toCharArray();
-
         System.out.println("Original : " + charTestWord);
         System.out.print("Char[]   : [");
         for (int i = 0; i < chars.length; i++) {
@@ -91,7 +102,6 @@ public class PalindromeChecker {
             if (i < chars.length - 1) System.out.print(", ");
         }
         System.out.println("]");
-
         int start = 0;
         int end = chars.length - 1;
         System.out.println("Comparing pointers:");
@@ -100,7 +110,6 @@ public class PalindromeChecker {
             start++;
             end--;
         }
-
         if (isPalindromeCharArray(charTestWord)) {
             System.out.println(charTestWord + " is a palindrome.");
         } else {
@@ -111,30 +120,55 @@ public class PalindromeChecker {
         System.out.println("\n--- UC5: Stack-Based Check ---");
         String stackTestWord = "noon";
         Stack<Character> stack = new Stack<>();
-
         System.out.println("Original : " + stackTestWord);
-
-        // Push
         for (int i = 0; i < stackTestWord.length(); i++) {
             stack.push(stackTestWord.charAt(i));
             System.out.println("  Pushed : '" + stackTestWord.charAt(i) + "'  Stack: " + stack);
         }
-
-        // Pop
         String popped = "";
         while (!stack.isEmpty()) {
             char c = stack.pop();
             popped = popped + c;
             System.out.println("  Popped : '" + c + "'  Reversed so far: " + popped);
         }
-
         System.out.println("Reversed : " + popped);
-
         if (isPalindromeStack(stackTestWord)) {
             System.out.println(stackTestWord + " is a palindrome.");
         } else {
             System.out.println(stackTestWord + " is not a palindrome.");
         }
+
+        // UC6: Queue vs Stack (FIFO vs LIFO)
+        System.out.println("\n--- UC6: Queue vs Stack (FIFO vs LIFO) ---");
+        String uc6Word = "civic";
+        Stack<Character> uc6Stack = new Stack<>();
+        Queue<Character> uc6Queue = new LinkedList<>();
+
+        System.out.println("Original : " + uc6Word);
+
+        for (int i = 0; i < uc6Word.length(); i++) {
+            uc6Stack.push(uc6Word.charAt(i));
+            uc6Queue.add(uc6Word.charAt(i));
+        }
+        System.out.println("Stack (LIFO) after push : " + uc6Stack);
+        System.out.println("Queue (FIFO) after enqueue : " + uc6Queue);
+
+        System.out.println("\nComparing pop (LIFO) vs dequeue (FIFO):");
+        Stack<Character> tempStack = new Stack<>();
+        Queue<Character> tempQueue = new LinkedList<>();
+        for (int i = 0; i < uc6Word.length(); i++) {
+            tempStack.push(uc6Word.charAt(i));
+            tempQueue.add(uc6Word.charAt(i));
+        }
+        boolean match = true;
+        while (!tempStack.isEmpty()) {
+            char fromStack = tempStack.pop();
+            char fromQueue = tempQueue.poll();
+            System.out.println("  Stack.pop() = '" + fromStack + "'  Queue.poll() = '" + fromQueue + "'  Match: " + (fromStack == fromQueue));
+            if (fromStack != fromQueue) match = false;
+        }
+
+        System.out.println("\nResult : " + (match ? uc6Word + " is a palindrome." : uc6Word + " is not a palindrome."));
 
         // UC1: Interactive checker
         System.out.println("\n================================");
@@ -151,9 +185,7 @@ public class PalindromeChecker {
         while (true) {
             System.out.print("\nEnter a word or phrase: ");
             String input = scanner.nextLine();
-
             if (input.equalsIgnoreCase("exit")) break;
-
             total++;
             if (isPalindrome(input)) {
                 palindromes++;
@@ -161,7 +193,6 @@ public class PalindromeChecker {
             } else {
                 System.out.println("✗ \"" + input + "\" is NOT a palindrome.");
             }
-
             System.out.println("  Stats: " + palindromes + "/" + total + " palindromes found");
         }
 
