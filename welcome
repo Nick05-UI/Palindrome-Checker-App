@@ -5,65 +5,115 @@ import java.util.LinkedList;
 import java.util.Deque;
 import java.util.ArrayDeque;
 
-class PalindromeLogic {
-    private String original;
-    private String normalized;
+interface PalindromeStrategy {
+    boolean check(String input);
+    String name();
+}
 
-    public PalindromeLogic(String input) {
-        this.original   = input;
-        this.normalized = input.toLowerCase().replaceAll("[^a-z0-9]", "");
-    }
-
-    public String getOriginal()   { return original;   }
-    public String getNormalized() { return normalized;  }
-
-    public boolean checkPalindrome() {
-        return isPalindromeRecursive(normalized, 0, normalized.length() - 1);
-    }
-
-    private boolean isPalindromeRecursive(String s, int l, int r) {
+class RecursiveStrategy implements PalindromeStrategy {
+    private boolean recurse(String s, int l, int r) {
         if (l >= r) return true;
         if (s.charAt(l) != s.charAt(r)) return false;
-        return isPalindromeRecursive(s, l + 1, r - 1);
+        return recurse(s, l + 1, r - 1);
     }
+    public boolean check(String s) { return recurse(s, 0, s.length() - 1); }
+    public String name() { return "Recursive"; }
+}
 
-    public boolean checkViaCharArray() {
-        char[] ch = normalized.toCharArray();
+class CharArrayStrategy implements PalindromeStrategy {
+    public boolean check(String s) {
+        char[] ch = s.toCharArray();
         int l = 0, r = ch.length - 1;
         while (l < r) { if (ch[l++] != ch[r--]) return false; }
         return true;
     }
+    public String name() { return "CharArray (Two-Pointer)"; }
+}
 
-    public boolean checkViaStack() {
+class StackStrategy implements PalindromeStrategy {
+    public boolean check(String s) {
         Stack<Character> st = new Stack<>();
-        for (char c : normalized.toCharArray()) st.push(c);
+        for (char c : s.toCharArray()) st.push(c);
         String rev = "";
         while (!st.isEmpty()) rev += st.pop();
-        return normalized.equals(rev);
+        return s.equals(rev);
     }
+    public String name() { return "Stack (LIFO)"; }
+}
 
-    public boolean checkViaQueueStack() {
+class QueueStackStrategy implements PalindromeStrategy {
+    public boolean check(String s) {
         Stack<Character> st = new Stack<>();
         Queue<Character> q  = new LinkedList<>();
-        for (char c : normalized.toCharArray()) { st.push(c); q.add(c); }
+        for (char c : s.toCharArray()) { st.push(c); q.add(c); }
         while (!st.isEmpty()) if (st.pop() != q.poll()) return false;
         return true;
     }
+    public String name() { return "Queue + Stack (FIFO vs LIFO)"; }
+}
 
-    public boolean checkViaDeque() {
+class DequeStrategy implements PalindromeStrategy {
+    public boolean check(String s) {
         Deque<Character> d = new ArrayDeque<>();
-        for (char c : normalized.toCharArray()) d.addLast(c);
+        for (char c : s.toCharArray()) d.addLast(c);
         while (d.size() > 1) if (d.removeFirst() != d.removeLast()) return false;
         return true;
     }
+    public String name() { return "Deque (Front & Rear)"; }
+}
+
+class LinkedListStrategy implements PalindromeStrategy {
+    static class Node { char data; Node next; Node(char d) { data = d; } }
+    private Node build(String s) {
+        Node head = null, tail = null;
+        for (char c : s.toCharArray()) {
+            Node n = new Node(c);
+            if (head == null) { head = tail = n; } else { tail.next = n; tail = n; }
+        }
+        return head;
+    }
+    private Node reverse(Node head) {
+        Node prev = null, curr = head;
+        while (curr != null) { Node nx = curr.next; curr.next = prev; prev = curr; curr = nx; }
+        return prev;
+    }
+    public boolean check(String s) {
+        Node head = build(s), slow = head, fast = head;
+        while (fast != null && fast.next != null) { slow = slow.next; fast = fast.next.next; }
+        Node sec = reverse(slow), fir = build(s);
+        while (sec != null) { if (fir.data != sec.data) return false; fir = fir.next; sec = sec.next; }
+        return true;
+    }
+    public String name() { return "Linked List (Fast & Slow Pointer)"; }
+}
+
+class PalindromeLogic {
+    private String original;
+    private String normalized;
+    private PalindromeStrategy strategy;
+
+    public PalindromeLogic(String input, PalindromeStrategy strategy) {
+        this.original   = input;
+        this.normalized = input.toLowerCase().replaceAll("[^a-z0-9]", "");
+        this.strategy   = strategy;
+    }
+
+    public void setStrategy(PalindromeStrategy strategy) { this.strategy = strategy; }
+    public String getOriginal()   { return original;   }
+    public String getNormalized() { return normalized;  }
+    public String getStrategy()   { return strategy.name(); }
+    public boolean checkPalindrome() { return strategy.check(normalized); }
 }
 
 public class PalindromeChecker {
 
-    static class Node {
-        char data; Node next;
-        Node(char d) { data = d; next = null; }
+    static String reverseString(String s) {
+        String r = "";
+        for (int i = s.length() - 1; i >= 0; i--) r += s.charAt(i);
+        return r;
     }
+
+    static class Node { char data; Node next; Node(char d) { data = d; } }
 
     static Node buildList(String s) {
         Node head = null, tail = null;
@@ -73,32 +123,16 @@ public class PalindromeChecker {
         }
         return head;
     }
-
     static Node reverseList(Node head) {
         Node prev = null, curr = head;
         while (curr != null) { Node nx = curr.next; curr.next = prev; prev = curr; curr = nx; }
         return prev;
     }
-
     static void printList(Node head) {
         System.out.print("[");
         for (Node c = head; c != null; c = c.next)
             System.out.print("'" + c.data + "'" + (c.next != null ? " -> " : ""));
         System.out.println("]");
-    }
-
-    static boolean isPalindromeLinkedList(String s) {
-        Node head = buildList(s), slow = head, fast = head;
-        while (fast != null && fast.next != null) { slow = slow.next; fast = fast.next.next; }
-        Node sec = reverseList(slow), fir = buildList(s);
-        while (sec != null) { if (fir.data != sec.data) return false; fir = fir.next; sec = sec.next; }
-        return true;
-    }
-
-    static String reverseString(String s) {
-        String r = "";
-        for (int i = s.length() - 1; i >= 0; i--) r += s.charAt(i);
-        return r;
     }
 
     public static void main(String[] args) {
@@ -119,8 +153,8 @@ public class PalindromeChecker {
         for (int i = 0; i < ch.length; i++) System.out.print(ch[i] + (i < ch.length - 1 ? ", " : ""));
         System.out.println("]");
         for (int s = 0, e = ch.length - 1; s < e; s++, e--)
-            System.out.println("  chars[" + s + "] = '" + ch[s] + "'  vs  chars[" + e + "] = '" + ch[e] + "'");
-        System.out.println(w4 + (new PalindromeLogic(w4).checkViaCharArray() ? " is" : " is not") + " a palindrome.");
+            System.out.println("  chars[" + s + "]='" + ch[s] + "'  vs  chars[" + e + "]='" + ch[e] + "'");
+        System.out.println(w4 + (new PalindromeLogic(w4, new CharArrayStrategy()).checkPalindrome() ? " is" : " is not") + " a palindrome.");
 
         System.out.println("\n--- UC5: Stack-Based Check ---");
         String w5 = "noon";
@@ -128,7 +162,7 @@ public class PalindromeChecker {
         for (char c : w5.toCharArray()) { st5.push(c); System.out.println("  Pushed : '" + c + "'  Stack: " + st5); }
         String popped = "";
         while (!st5.isEmpty()) { char c = st5.pop(); popped += c; System.out.println("  Popped : '" + c + "'  Reversed so far: " + popped); }
-        System.out.println(w5 + (new PalindromeLogic(w5).checkViaStack() ? " is" : " is not") + " a palindrome.");
+        System.out.println(w5 + (new PalindromeLogic(w5, new StackStrategy()).checkPalindrome() ? " is" : " is not") + " a palindrome.");
 
         System.out.println("\n--- UC6: Queue vs Stack (FIFO vs LIFO) ---");
         String w6 = "civic";
@@ -171,7 +205,7 @@ public class PalindromeChecker {
         Node h2 = buildList(w8), s2 = h2, f2 = h2;
         while (f2 != null && f2.next != null) { s2 = s2.next; f2 = f2.next.next; }
         System.out.print("Second half reversed : "); printList(reverseList(s2));
-        System.out.println(w8 + (isPalindromeLinkedList(w8) ? " is" : " is not") + " a palindrome.");
+        System.out.println(w8 + (new PalindromeLogic(w8, new LinkedListStrategy()).checkPalindrome() ? " is" : " is not") + " a palindrome.");
 
         System.out.println("\n--- UC9: Recursive Check ---");
         String w9 = "refer";
@@ -179,45 +213,83 @@ public class PalindromeChecker {
             System.out.println(s == e
                 ? "  call(" + s + "," + e + ") --> base case '" + w9.charAt(s) + "'"
                 : "  call(" + s + "," + e + ") --> '" + w9.charAt(s) + "' vs '" + w9.charAt(e) + "'");
-        System.out.println(w9 + (new PalindromeLogic(w9).checkPalindrome() ? " is" : " is not") + " a palindrome.");
+        System.out.println(w9 + (new PalindromeLogic(w9, new RecursiveStrategy()).checkPalindrome() ? " is" : " is not") + " a palindrome.");
 
         System.out.println("\n--- UC10: Ignore Spaces & Case ---");
         for (String t : new String[]{ "A man a plan a canal Panama", "Was it a car or a cat I saw", "Hello World" }) {
-            PalindromeLogic pl = new PalindromeLogic(t);
+            PalindromeLogic pl = new PalindromeLogic(t, new RecursiveStrategy());
             System.out.println("Original   : " + pl.getOriginal());
             System.out.println("Normalized : " + pl.getNormalized());
-            System.out.println("Result     : " + pl.getOriginal() + (pl.checkPalindrome() ? " is" : " is not") + " a palindrome.\n");
+            System.out.println("Result     : " + t + (pl.checkPalindrome() ? " is" : " is not") + " a palindrome.\n");
         }
 
         System.out.println("--- UC11: Encapsulated PalindromeLogic Class ---");
         for (String t : new String[]{ "madam", "A Santa at NASA", "hello" }) {
-            PalindromeLogic pl = new PalindromeLogic(t);
+            PalindromeLogic pl = new PalindromeLogic(t, new RecursiveStrategy());
             System.out.println("Input      : " + pl.getOriginal());
             System.out.println("Normalized : " + pl.getNormalized());
-            System.out.println("Recursive  : " + pl.checkPalindrome());
-            System.out.println("CharArray  : " + pl.checkViaCharArray());
-            System.out.println("Stack      : " + pl.checkViaStack());
-            System.out.println("Queue+Stack: " + pl.checkViaQueueStack());
-            System.out.println("Deque      : " + pl.checkViaDeque());
+            for (PalindromeStrategy strat : new PalindromeStrategy[]{
+                new RecursiveStrategy(), new CharArrayStrategy(),
+                new StackStrategy(), new QueueStackStrategy(), new DequeStrategy() }) {
+                pl.setStrategy(strat);
+                System.out.println("  " + strat.name() + " : " + pl.checkPalindrome());
+            }
+            pl.setStrategy(new RecursiveStrategy());
             System.out.println("Result     : " + t + (pl.checkPalindrome() ? " is" : " is not") + " a palindrome.\n");
+        }
+
+        System.out.println("--- UC12: Strategy Pattern ---");
+        PalindromeStrategy[] strategies = {
+            new RecursiveStrategy(), new CharArrayStrategy(), new StackStrategy(),
+            new QueueStackStrategy(), new DequeStrategy(), new LinkedListStrategy()
+        };
+        String[] testWords = { "racecar", "A man a plan a canal Panama", "hello" };
+        for (String t : testWords) {
+            PalindromeLogic pl = new PalindromeLogic(t, new RecursiveStrategy());
+            System.out.println("Input      : " + pl.getOriginal());
+            System.out.println("Normalized : " + pl.getNormalized());
+            for (PalindromeStrategy strat : strategies) {
+                pl.setStrategy(strat);
+                System.out.println("  [" + strat.name() + "] --> " + (pl.checkPalindrome() ? "palindrome" : "not palindrome"));
+            }
+            System.out.println();
         }
 
         System.out.println("================================");
         System.out.println("     PALINDROME CHECKER v1.0    ");
         System.out.println("================================");
+        System.out.println("Select strategy:");
+        System.out.println("  1. Recursive       2. CharArray");
+        System.out.println("  3. Stack           4. Queue+Stack");
+        System.out.println("  5. Deque           6. LinkedList");
         System.out.println("Type 'exit' to quit.");
         System.out.println("--------------------------------");
 
+        PalindromeStrategy[] menu = {
+            new RecursiveStrategy(), new CharArrayStrategy(), new StackStrategy(),
+            new QueueStackStrategy(), new DequeStrategy(), new LinkedListStrategy()
+        };
+
         Scanner scanner = new Scanner(System.in);
         int total = 0, palindromes = 0;
+        PalindromeStrategy chosen = new RecursiveStrategy();
+
         while (true) {
-            System.out.print("\nEnter a word or phrase: ");
+            System.out.print("\nStrategy (1-6) or Enter to keep [" + chosen.name() + "]: ");
+            String line = scanner.nextLine().trim();
+            if (line.equalsIgnoreCase("exit")) break;
+            if (!line.isEmpty()) {
+                int pick = Integer.parseInt(line) - 1;
+                if (pick >= 0 && pick < menu.length) chosen = menu[pick];
+            }
+            System.out.print("Enter a word or phrase: ");
             String input = scanner.nextLine();
             if (input.equalsIgnoreCase("exit")) break;
             total++;
-            PalindromeLogic pl = new PalindromeLogic(input);
-            if (pl.checkPalindrome()) { palindromes++; System.out.println("✓ \"" + input + "\" IS a palindrome!"); }
-            else                      {                 System.out.println("✗ \"" + input + "\" is NOT a palindrome."); }
+            PalindromeLogic pl = new PalindromeLogic(input, chosen);
+            boolean result = pl.checkPalindrome();
+            if (result) { palindromes++; System.out.println("✓ \"" + input + "\" IS a palindrome!  [" + chosen.name() + "]"); }
+            else        {                System.out.println("✗ \"" + input + "\" is NOT a palindrome.  [" + chosen.name() + "]"); }
             System.out.println("  Stats: " + palindromes + "/" + total + " palindromes found");
         }
 
