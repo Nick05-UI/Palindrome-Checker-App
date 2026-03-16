@@ -7,6 +7,20 @@ import java.util.ArrayDeque;
 
 public class PalindromeChecker {
 
+    // UC9: Recursive palindrome check
+    public static boolean isPalindromeRecursive(String input, int start, int end) {
+        // Base condition 1: empty string or single character
+        if (start >= end) {
+            return true;
+        }
+        // Compare start and end characters
+        if (input.charAt(start) != input.charAt(end)) {
+            return false;
+        }
+        // Recursive call: move inward
+        return isPalindromeRecursive(input, start + 1, end - 1);
+    }
+
     // UC8: Singly Linked List Node
     static class Node {
         char data;
@@ -62,19 +76,13 @@ public class PalindromeChecker {
     // UC8: Palindrome check using singly linked list
     public static boolean isPalindromeLinkedList(String input) {
         Node head = buildLinkedList(input);
-
-        // Step 1: Find middle using fast and slow pointers
         Node slow = head;
         Node fast = head;
         while (fast != null && fast.next != null) {
             slow = slow.next;
             fast = fast.next.next;
         }
-
-        // Step 2: Reverse second half
         Node secondHalf = reverseList(slow);
-
-        // Step 3: Compare both halves
         Node first  = head;
         Node second = secondHalf;
         while (second != null) {
@@ -284,25 +292,18 @@ public class PalindromeChecker {
         System.out.println("\n--- UC8: Singly Linked List ---");
         String listWord = "kayak";
         System.out.println("Original : " + listWord);
-
         Node head = buildLinkedList(listWord);
         System.out.print("Linked List        : ");
         printLinkedList(head);
-
-        // Find middle using fast and slow pointers
         Node slow = head;
         Node fast = head;
-        int slowSteps = 0;
         System.out.println("\nFinding middle (fast & slow pointer):");
         while (fast != null && fast.next != null) {
             System.out.println("  slow -> '" + slow.data + "'  fast -> '" + fast.data + "'");
             slow = slow.next;
             fast = fast.next.next;
-            slowSteps++;
         }
         System.out.println("  Middle node reached at : '" + slow.data + "'");
-
-        // Rebuild for reversal display
         Node head2      = buildLinkedList(listWord);
         Node slow2      = head2;
         Node fast2      = head2;
@@ -313,12 +314,10 @@ public class PalindromeChecker {
         Node secondHalf = reverseList(slow2);
         System.out.print("Second half reversed : ");
         printLinkedList(secondHalf);
-
-        // Compare halves
         System.out.println("\nComparing first half vs reversed second half:");
-        Node head3       = buildLinkedList(listWord);
-        Node slow3       = head3;
-        Node fast3       = head3;
+        Node head3  = buildLinkedList(listWord);
+        Node slow3  = head3;
+        Node fast3  = head3;
         while (fast3 != null && fast3.next != null) {
             slow3 = slow3.next;
             fast3 = fast3.next.next;
@@ -332,11 +331,36 @@ public class PalindromeChecker {
             second = second.next;
             cStep++;
         }
-
         if (isPalindromeLinkedList(listWord)) {
             System.out.println("\n" + listWord + " is a palindrome.");
         } else {
             System.out.println("\n" + listWord + " is not a palindrome.");
+        }
+
+        // UC9: Recursive palindrome check
+        System.out.println("\n--- UC9: Recursive Check ---");
+        String recWord = "refer";
+        System.out.println("Original : " + recWord);
+        System.out.println("\nRecursive call stack (winding phase):");
+        for (int s = 0, e = recWord.length() - 1; s <= e; s++, e--) {
+            if (s == e) {
+                System.out.println("  isPalindromeRecursive(\"" + recWord + "\", " + s + ", " + e + ")  --> base case: single character '" + recWord.charAt(s) + "', return true");
+            } else {
+                System.out.println("  isPalindromeRecursive(\"" + recWord + "\", " + s + ", " + e + ")  --> compare '" + recWord.charAt(s) + "' and '" + recWord.charAt(e) + "'");
+            }
+        }
+        System.out.println("\nUnwinding phase (returning true up the call stack):");
+        for (int s = recWord.length() / 2, e = recWord.length() / 2; s >= 0; s--, e++) {
+            if (s == e) {
+                System.out.println("  return true  (base case reached)");
+            } else if (e < recWord.length()) {
+                System.out.println("  return true  <-- '" + recWord.charAt(s) + "' == '" + recWord.charAt(e) + "'");
+            }
+        }
+        if (isPalindromeRecursive(recWord, 0, recWord.length() - 1)) {
+            System.out.println("\n" + recWord + " is a palindrome.");
+        } else {
+            System.out.println("\n" + recWord + " is not a palindrome.");
         }
 
         // UC1: Interactive checker
